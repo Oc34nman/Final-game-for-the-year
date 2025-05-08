@@ -1,10 +1,11 @@
 # Final-game-for-the-year
+
 import pygame
 
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("OOP Platformer Base Code")
+pygame.display.set_caption("super!")
 background_image = pygame.image.load('placeholderback.png').convert_alpha()
 clock = pygame.time.Clock()
 GRAVITY = 0.5
@@ -13,7 +14,10 @@ keys = pygame.key.get_pressed()
 WHITE = (255, 255, 255)
 BLUE = (0, 100, 255)
 GREEN = (0, 200, 0)
+#variables
 offset = 0
+bg_x1 = 0
+bg_x2 = 800
 frameWidth = 64
 frameHeight = 96
 RowNum = 0
@@ -29,7 +33,7 @@ class Platform:
         self.h = h
 
     def draw(self, surface): #draw function
-        pygame.draw.rect(surface, GREEN, (self.x, self.y, self.w, self.h))
+        pygame.draw.rect(surface, GREEN, (self.x+offset, self.y, self.w, self.h))
         
 
 #-class player----------------------------------------------------------------------------------------------
@@ -41,16 +45,23 @@ class Player:
         self.w = 40
         self.h = 60
         self.vy = 0
+        self.vx = 0
         self.on_ground = False
 
     def handle_input(self, keys): #keyboard input
+        global offset
         if keys[pygame.K_RIGHT]:
-            self.x += 5
+            #self.x += 5
+            #self.xv = 0 
+            offset -= 5
         if keys[pygame.K_LEFT]:
-            self.x -= 5
+            #self.x -= 5
+            #self.vx = 0
+            offset +=5
         if keys[pygame.K_UP] and self.on_ground:
             self.vy = -12
             self.on_ground = False
+            
 
     def apply_gravity(self): #make player fall
         self.vy += GRAVITY
@@ -66,7 +77,10 @@ class Player:
                     self.on_ground = True
 
     def is_colliding(self, plat): #bounding box collision
-        if self.x + self.w > plat.x and self.x < plat.x + plat.w and self.y + self.h > plat.y and self.y < plat.y + plat.h:
+        global offset
+        #print("offset is", offset)
+        if self.x + self.w > plat.x+offset and self.x < plat.x+offset + plat.w and self.y + self.h > plat.y and self.y < plat.y + plat.h:
+            #print("colliding")
             return True
         else:
             return False
@@ -77,7 +91,7 @@ class Player:
         self.check_collision(platforms)
 
     def draw(self, surface):
-        pygame.draw.rect(surface, BLUE, (self.x, self.y, self.w, self.h))
+        pygame.draw.rect(surface, (255, 0, 0), (self.x, self.y, self.w, self.h))
 
 #-end of classes----------------------------------------------------------------------------------------------
 
@@ -90,33 +104,36 @@ platforms = [
 
 player = Player(100, 100) #calling player class constructor
 
-if keys[pygame.K_LEFT]:
-        if offset > 260 and player[0]>0: #check if youve reached the left edge of the map
-            player[2] = -5 #let player approach side of game screen
-        
-        elif player[0]>400 and offset < -1500:#check if were on the far right edge of the map
-            player[2] = -5 #let player get back to the center of the game screen
-            
-        elif player[0]>0: #if player is recenbtered, move the *offset*, not the player
-            offset += 5
-            player [2] = 0
-            
-        else:
-            player[2] = 0 #make sure motion is off (stops from going off edge.
+
     
 if keys[pygame.K_RIGHT]:
         if offset < -1500 and player[0]<750:
-            player [2] = 5
+            player.vx = 5
         
         elif offset >260 and player[0]<400:
-            player[2] = 5
+            player.vx = 5
         
-        elif player[0]<750:
+        elif player.x<750:
             offset -= 5
-            player [2] = 0
+            player.vx = 0
         
         else:
-            player[2] = 0
+            player.vx = 0
+if keys[pygame.K_LEFT]:
+        if offset > 260 and player[0]>0: #check if youve reached the left edge of the map
+            player.vx = -5 #let player approach side of game screen
+        
+        elif player.vy>400 and offset < -1500:#check if were on the far right edge of the map
+            player.vx = -5 #let player get back to the center of the game screen
+            
+        elif player.x>0: #if player is recenbtered, move the *offset*, not the player
+            offset += 5
+            player.vx = 0
+            
+        else:
+            player.vx = 0 #make sure motion is off (stops from going off edge.
+    
+
 
 running = True
 while running: #GAME LOOP############################################################################
@@ -137,6 +154,26 @@ while running: #GAME LOOP#######################################################
     #render section-------------------
     screen.fill(WHITE)
     screen.blit(background_image, (0, 0))
+
+
+
+    if player.vy < 0:
+        ticker+=1
+        if ticker%10==0:
+            frameNum+=1
+            
+        if frameNum>7:
+            frameNum = 0
+   # bg_x1 -= 2
+   # bg_x2 -= 2
+
+  #  if bg_x1 <= -800:
+   #     bg_x1 = 800
+   # if bg_x2 <= -800:
+    #    bg_x2 = 800
+
+    #screen.blit(background_image, (bg_x1, 0))
+    #screen.blit(background_image, (bg_x2, 0))
     for plat in platforms:
         plat.draw(screen)
 
@@ -144,14 +181,7 @@ while running: #GAME LOOP#######################################################
 
 
 
-    
-    if player.x < 110:
-        ticker+=1
-        if ticker%10==0:
-            frameNum+=1
-            
-        if frameNum>7:
-            frameNum = 0
+
     pygame.display.flip()
     
 #END OF GAME LOOP############################################################################
