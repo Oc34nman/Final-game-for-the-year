@@ -1,12 +1,10 @@
 # Final-game-for-the-year
-
 import pygame
-
-
+import sys
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("super!")
-background_image = pygame.image.load('placeholderback.png').convert_alpha()
+background_image = pygame.image.load('finalbackground.png').convert_alpha()
 clock = pygame.time.Clock()
 GRAVITY = 0.5
 keys = pygame.key.get_pressed()
@@ -23,6 +21,8 @@ frameHeight = 96
 RowNum = 0
 frameNum = 0
 ticker = 0
+
+
 #-class platform----------------------------------------------------------------------------------------------
 class Platform:
     
@@ -67,14 +67,24 @@ class Player:
         self.vy += GRAVITY
         self.y += self.vy
 
-    def check_collision(self, platforms): 
-        self.on_ground = False #assume we're in the air, change if not
-        for plat in platforms: #check all the platforms in the list
-            if self.is_colliding(plat): #if we ARE colliding, reset feet to top of platform...
-                if self.y + self.h <= plat.y + self.vy:
+    def check_collision(self, platforms):
+        self.on_ground = False
+        for plat in platforms:
+            plat_x = plat.x + offset
+
+            # Check vertical collision
+            if self.x + self.w > plat_x and self.x < plat_x + plat.w:
+                if self.y + self.h > plat.y and self.y + self.h - self.vy <= plat.y:
                     self.y = plat.y - self.h
                     self.vy = 0
                     self.on_ground = True
+
+            # Check horizontal collision
+            if self.y + self.h > plat.y and self.y < plat.y + plat.h:
+                if self.x + self.w > plat_x and self.x < plat_x:
+                    self.x = plat_x - self.w
+                elif self.x < plat_x + plat.w and self.x + self.w > plat_x + plat.w:
+                    self.x = plat_x + plat.w
 
     def is_colliding(self, plat): #bounding box collision
         global offset
@@ -93,15 +103,30 @@ class Player:
     def draw(self, surface):
         pygame.draw.rect(surface, (255, 0, 0), (self.x, self.y, self.w, self.h))
 
+class Spikes:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+       
+        
+    def draw(self, surface):
+        pygame.draw.polygon(surface, (0, 200, 0), [(self.x+offset, self.y), (self.x+50+offset, self.y-50), (self.x+100+offset, self.y+50)])
 #-end of classes----------------------------------------------------------------------------------------------
 
 #list to contain platforms
 platforms = [
     Platform(100, 500, 1300, 20), #calling platform class constructor
-    Platform(300, 400, 100, 10),
-    Platform(500, 300, 100, 10)
+    Platform(300, 400, 100, 100),
+    Platform(500, 300, 100, 200),
+    Platform(800, 500, 1300, 20),
+    Platform(900, 380, 200, 30),
+    Platform(1200, 300, 400, 30),
+    Platform(1400, 390, 110, 110),
 ]
 
+spikes = [
+    Spikes(200, 200)
+]
 player = Player(100, 100) #calling player class constructor
 
 
@@ -177,6 +202,9 @@ while running: #GAME LOOP#######################################################
     for plat in platforms:
         plat.draw(screen)
 
+    for spike in spikes:
+        spike.draw(screen)
+    
     player.draw(screen)
 
 
@@ -187,3 +215,4 @@ while running: #GAME LOOP#######################################################
 #END OF GAME LOOP############################################################################
 
 pygame.quit()
+
