@@ -121,11 +121,17 @@ platforms = [
     Platform(800, 500, 1300, 20),
     Platform(900, 380, 200, 30),
     Platform(1200, 300, 400, 30),
-    Platform(1400, 390, 110, 110),
+    Platform(2250, 400, 400, 30),
+    Platform(2700, 300, 400, 30),
+    Platform(3200, 500, 400, 30),
+    Platform(3200, 500, 400, 30),
+    Platform(3700, 430, 400, 30),
 ]
 
 spikes = [
-    Spikes(200, 200)
+    Spikes(200, 200),
+    Spikes(1700, 500),
+    Spikes(2000, 500 ),
 ]
 player = Player(100, 100) #calling player class constructor
 
@@ -215,4 +221,5 @@ while running: #GAME LOOP#######################################################
 #END OF GAME LOOP############################################################################
 
 pygame.quit()
+
 
