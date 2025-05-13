@@ -4,7 +4,8 @@ import sys
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("super!")
-background_image = pygame.image.load('finalbackground.png').convert_alpha()
+#=background_image = pygame.image.load('background.png').convert_alpha()
+playerani = pygame.image.load('knightfinal.png').convert_alpha()
 clock = pygame.time.Clock()
 GRAVITY = 0.5
 keys = pygame.key.get_pressed()
@@ -16,11 +17,12 @@ GREEN = (0, 200, 0)
 offset = 0
 bg_x1 = 0
 bg_x2 = 800
-frameWidth = 64
-frameHeight = 96
-RowNum = 0
-frameNum = 0
+
 ticker = 0
+
+total_time = 60 
+font = pygame.font.SysFont('freesansbold.ttf', 40)  
+score = 0
 
 
 #-class platform----------------------------------------------------------------------------------------------
@@ -47,20 +49,35 @@ class Player:
         self.vy = 0
         self.vx = 0
         self.on_ground = False
+        self.frameWidth = 45
+        self.frameHeight = 65
+        self.Rows = 0
+        self.frameNum = 0
 
+            
     def handle_input(self, keys): #keyboard input
         global offset
         if keys[pygame.K_RIGHT]:
             #self.x += 5
             #self.xv = 0 
             offset -= 5
-        if keys[pygame.K_LEFT]:
+            self.Rows = 0
+            self.frameNum +=1 
+            if self.frameNum > 2:
+                self.frameNum = 0
+        elif keys[pygame.K_LEFT]:
             #self.x -= 5
             #self.vx = 0
             offset +=5
+            self.Rows = 1
+            self.frameNum += 1
+            if self.frameNum > 2:
+                self.frameNum = 0
         if keys[pygame.K_UP] and self.on_ground:
             self.vy = -12
             self.on_ground = False
+
+        
             
 
     def apply_gravity(self): #make player fall
@@ -72,6 +89,12 @@ class Player:
         for plat in platforms:
             plat_x = plat.x + offset
 
+            if self.x + self.frameWidth > plat.x + offset and self.x < plat.x + offset + plat.w:
+                    if self.y + self.frameHeight > plat.y and self.y + self.frameHeight - self.vy <= plat.y:
+                        self.y = plat.y - self.frameHeight
+                        self.vy = 0
+                        self.on_ground = True   
+            
             # Check vertical collision
             if self.x + self.w > plat_x and self.x < plat_x + plat.w:
                 if self.y + self.h > plat.y and self.y + self.h - self.vy <= plat.y:
@@ -86,6 +109,9 @@ class Player:
                 elif self.x < plat_x + plat.w and self.x + self.w > plat_x + plat.w:
                     self.x = plat_x + plat.w
 
+            if self.y >= 580:
+                sys.exit()
+
     def is_colliding(self, plat): #bounding box collision
         global offset
         #print("offset is", offset)
@@ -99,43 +125,163 @@ class Player:
     def update(self, platforms): #funtion that calls a bunch of other functions (keeps game loop more simple)
         self.apply_gravity()
         self.check_collision(platforms)
+        self.x += self.vx
+
+
+
 
     def draw(self, surface):
-        pygame.draw.rect(surface, (255, 0, 0), (self.x, self.y, self.w, self.h))
+        surface.blit(playerani, (self.x, self.y), (self.frameWidth * self.frameNum, self.Rows * self.frameHeight, self.frameWidth, self.frameHeight))
 
 class Spikes:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.image = pygame.image.load('spike.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (25, 25))
        
         
     def draw(self, surface):
-        pygame.draw.polygon(surface, (0, 200, 0), [(self.x+offset, self.y), (self.x+50+offset, self.y-50), (self.x+100+offset, self.y+50)])
+        global offset
+        #pygame.draw.polygon(surface, (0, 0, 200), [(self.x+offset+50, self.y+12.5), (self.x+37.5+offset, self.y-12.5), (self.x+25+offset, self.y+12.5)])
+        screen.blit(self.image, (self.x + offset, self.y))
+
+    def is_colliding(self, player):
+        global offset
+        if (player.x + player.w > self.x + offset and
+            player.x < self.x + offset + 20.5 and  
+            player.y + player.h > self.y - 8.5 and  
+            player.y < self.y + 8.5):  
+            return True
+        return False
+    
+class Projectile:
+    def __init__(self, x, y, speed):
+        self.x = x
+        self.y = y
+        self.speed = speed
+        self.w = 10
+        self.h = 10
+        self.color = (255, 0, 0) 
+        self.image = pygame.image.load('cannonproj.png').convert_alpha()
+
+    def update(self):
+        self.x -= self.speed  
+
+    def draw(self, surface):
+        #pygame.draw.rect(surface, self.color, (self.x + offset, self.y, self.w, self.h))
+        screen.blit(self.image, (self.x + offset, self.y, self.w, self.h))
+
+    def is_colliding(self, player):
+        if (player.x + player.w > self.x + offset and
+            player.x < self.x + offset + self.w and
+            player.y + player.h > self.y and
+            player.y < self.y + self.h):
+            return True
+        return False
+    
+class Cannon:
+    def __init__(self, x, y, w, h):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.cooldown = 0  # Timer for shooting
+        self.projectiles = []
+        self.image = pygame.image.load('cannon.png').convert_alpha()
+        
+    def draw(self, surface):
+        #pygame.draw.rect(surface, (0, 0, 0), (self.x + offset, self.y, self.w, self.h))
+        screen.blit(self.image, (self.x + offset, self.y, self.w, self.h))
+        for projectile in self.projectiles:
+            projectile.draw(surface)
+
+    def shoot(self):
+        if self.cooldown == 0:
+            self.projectiles.append(Projectile(self.x, self.y + self.h // 2, 5))
+            self.cooldown = 70
+        
+        if self.cooldown > 0:
+            self.cooldown -= 1
+
+    def update(self):
+        for projectile in self.projectiles:
+            projectile.update()
+            if projectile.x < -50:  # Remove off-screen projectiles
+                self.projectiles.remove(projectile)
+
+class Coin:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.image = pygame.image.load('coin.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (40, 40))
+
+    def draw(self, surface):
+        screen.blit(self.image, (self.x + offset, self.y))
+
+    def playerCoincollision(self, player):
+     global score  
+     if (player.x + player.w > self.x + offset and
+         player.x < self.x + offset + 40 and  
+         player.y + player.h > self.y and
+         player.y < self.y + 40):  
+         score += 10
+         return True  
+     return False
+    
+class Shop:
+    def __init__(self, x, y, w, h):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+ 
+    def draw(self, surface):
+        global offset
+        pygame.draw.rect(surface, (0, 0, 0), (self.x + offset, self.y, self.w, self.h))
+        
 #-end of classes----------------------------------------------------------------------------------------------
 
 #list to contain platforms
 platforms = [
-    Platform(100, 500, 1300, 20), #calling platform class constructor
+    Platform(100, 500, 600, 20), #calling platform class constructor
     Platform(300, 400, 100, 100),
-    Platform(500, 300, 100, 200),
-    Platform(800, 500, 1300, 20),
-    Platform(900, 380, 200, 30),
-    Platform(1200, 300, 400, 30),
-    Platform(2250, 400, 400, 30),
-    Platform(2700, 300, 400, 30),
-    Platform(3200, 500, 400, 30),
-    Platform(3200, 500, 400, 30),
-    Platform(3700, 430, 400, 30),
+    Platform(600, 300, 100, 200),
+    Platform(845, 245, 100, 20),
+    Platform(1100, 400, 100, 20),
+    Platform(1400, 400, 100, 20),
+    Platform(2000, 380, 100, 20),
+    Platform(1700, 380, 100, 20)
 ]
 
 spikes = [
-    Spikes(200, 200),
-    Spikes(1700, 500),
-    Spikes(2000, 500 ),
+    Spikes(400, 475),
+    Spikes(425, 475),
+    Spikes(450, 475),
+    Spikes(475, 475),
+    Spikes(500, 475),
+    Spikes(525, 475),
+    Spikes(550, 475),
+    Spikes(575, 475),
+    Spikes(845, 220),
+    Spikes(920, 220)
+    
+]
+
+cannons = [
+    Cannon(2000, 350, 50, 30)
+]
+
+coins = [
+    Coin(330, 360)
 ]
 player = Player(100, 100) #calling player class constructor
 
+shops = [
+    Shop(2200, 380, 100, 100)
 
+]
     
 if keys[pygame.K_RIGHT]:
         if offset < -1500 and player[0]<750:
@@ -165,13 +311,21 @@ if keys[pygame.K_LEFT]:
             player.vx = 0 #make sure motion is off (stops from going off edge.
     
 
-
+start_ticks = pygame.time.get_ticks()
 running = True
 while running: #GAME LOOP############################################################################
-    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            over = True
+    if event.type == pygame.MOUSEMOTION:
+            mousePos = event.pos
+            print("mouse position: (",mousePos[0], " , ",mousePos[1], ")")
     #input section-------------------
     clock.tick(60)
-    
+    seconds = total_time - (pygame.time.get_ticks() - start_ticks) // 1000
+    if seconds <= 0:
+        print("Time's up!")
+        running = False
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -179,38 +333,47 @@ while running: #GAME LOOP#######################################################
     keys = pygame.key.get_pressed()
     player.handle_input(keys)
     
+    for spike in spikes:
+        if spike.is_colliding(player):
+            running = False
+            
     #update/physics section-----------
     player.update(platforms)
 
+    for coin in coins[:]:  # Use a copy of the list to avoid errors while removing
+        if coin.playerCoincollision(player):
+            coins.remove(coin)
     #render section-------------------
     screen.fill(WHITE)
-    screen.blit(background_image, (0, 0))
+    #screen.blit(background_image, (0, 0))
+    timer_text = font.render(f"Time: {seconds}", True, BLUE)
+    screen.blit(timer_text, (620, 10))
 
-
-
-    if player.vy < 0:
-        ticker+=1
-        if ticker%10==0:
-            frameNum+=1
-            
-        if frameNum>7:
-            frameNum = 0
-   # bg_x1 -= 2
-   # bg_x2 -= 2
-
-  #  if bg_x1 <= -800:
-   #     bg_x1 = 800
-   # if bg_x2 <= -800:
-    #    bg_x2 = 800
-
-    #screen.blit(background_image, (bg_x1, 0))
-    #screen.blit(background_image, (bg_x2, 0))
+    playerscore = font.render(f"score: {score}", True, BLUE)
+    screen.blit(playerscore, (5, 10))
     for plat in platforms:
         plat.draw(screen)
 
     for spike in spikes:
         spike.draw(screen)
     
+    for cannon in cannons:
+        cannon.draw(screen)
+
+    for shop in shops:
+        shop.draw(screen)
+
+
+    for cannon in cannons:
+        cannon.shoot()
+        cannon.update()
+        for projectile in cannon.projectiles:
+            if projectile.is_colliding(player):
+                print("test")
+                running = False
+
+    for coin in coins:
+        coin.draw(screen)
     player.draw(screen)
 
 
@@ -221,5 +384,4 @@ while running: #GAME LOOP#######################################################
 #END OF GAME LOOP############################################################################
 
 pygame.quit()
-
 
