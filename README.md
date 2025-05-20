@@ -124,6 +124,10 @@ class Player:
             if self.y >= 580:
                 sys.exit()
 
+            for plat in movingplatforms:
+                if self.on_ground and self.y + self.h == plat.y and self.x +offset + self.w > plat.x + offset and self.x < plat.x + offset + plat.w:
+                    self.x += plat.speed * plat.direction
+
     def is_colliding(self, plat): #bounding box collision
         global offset
         #print("offset is", offset)
@@ -134,9 +138,9 @@ class Player:
             return False
         
 
-    def update(self, platforms): #funtion that calls a bunch of other functions (keeps game loop more simple)
+    def update(self, platforms, movingplatforms): #funtion that calls a bunch of other functions (keeps game loop more simple)
         self.apply_gravity()
-        self.check_collision(platforms)
+        self.check_collision(platforms + movingplatforms)
         self.x += self.vx
 
 
@@ -191,8 +195,7 @@ class Projectile:
             player.y < self.y + self.h):
             return True
         return False
-
-        
+    
 class Cannon:
     def __init__(self, x, y, w, h):
         self.x = x
@@ -303,24 +306,56 @@ class Checkpoint:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-
+        self.activated = False
 
     def draw(self, surface):
         pygame.draw.rect(surface, (0, 0, 0), (self.x + offset, self.y, 20, 50))
 
     def is_colliding(self, player):
         if (player.x + player.w > self.x + offset and
+            player.x < self.x + offset + 20 and  
+            player.y + player.h > self.y and
+            player.y < self.y + 50): 
+            self.activated = True
+            return True
+        return False
+            
+class MovingPlatform:
+     def __init__(self, x, y, w, h, min_x, max_x, speed=2):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.min_x = min_x
+        self.max_x = max_x
+        self.speed = speed
+        self.direction = 1
+    
+     def update(self):
+            self.x += self.speed * self.direction
+            if self.x < self.min_x or self.x + self.w > self.max_x:
+                self.direction *= -1
+
+     def draw(self, surface):
+         pygame.draw.rect(surface, GREEN, (self.x + offset, self.y, self.w, self.h))
+
+     def is_colliding(self, player):
+        if (player.x + player.w > self.x + offset and
          player.x < self.x + offset + 40 and  
          player.y + player.h > self.y and
          player.y < self.y + 40): 
-            
-            lives += 1
-            
+            print("test")
 
 def reset_game():
-    global player, offset  # Make sure to reset the player and offset
-    player.x = 100  # Reset player to starting x position
-    player.y = 100  # Reset player to starting y position
+    global player, offset 
+    for checkpoint in reversed(checkpoints):
+        if checkpoint.activated:
+            player.x = checkpoint.x
+            player.y = checkpoint.y
+            offset = -checkpoint.x + 100
+            return
+    player.x = 100  
+    player.y = 100  
     offset = 0  
 #list to contain platforms
 platforms = [
@@ -370,9 +405,13 @@ enemies = [
 ]
 
 checkpoints = [
-    Checkpoint(2600, 355)
+    Checkpoint(2600, 330)
 ]
 
+movingplatforms = [
+    MovingPlatform(2800, 380, 100, 20, 2800, 3100),
+    MovingPlatform(2800, 380, 100, 20, 3000, 3800),
+]
 attacks = []
     
 if keys[pygame.K_RIGHT]:
@@ -430,7 +469,10 @@ while running: #GAME LOOP#######################################################
         if shop.playerShopcollision(player) and keys[pygame.K_LSHIFT]:
             shop_open = True  # Open the shop
             print("Shop opened")
-
+    for checkpoint in checkpoints:
+        if checkpoint.is_colliding(player):
+            print("test")
+            
     
 
     for attack in attacks[:]:
@@ -438,12 +480,6 @@ while running: #GAME LOOP#######################################################
         if not attack.active:
             attacks.remove(attack)
 
-        for enemy in enemies[:]:
-            if attack.is_colliding(enemy):
-                enemies.remove(enemy)  # Remove enemy
-                score += 10  # Increase player score
-                attacks.remove(attack)  # Attack ends on collision
-                break  # Only one enemy per attack
 
     for enemy in enemies:
         enemy.update()
@@ -457,8 +493,10 @@ while running: #GAME LOOP#######################################################
 
             
     #update/physics section-----------
-    player.update(platforms)
+    player.update(platforms, movingplatforms)
 
+    for movingplatform in movingplatforms:
+        movingplatform.update()
     for coin in coins[:]:  # Use a copy of the list to avoid errors while removing
         if coin.playerCoincollision(player):
             coins.remove(coin)
@@ -482,11 +520,16 @@ while running: #GAME LOOP#######################################################
     for cannon in cannons:
         cannon.draw(screen)
 
+    for enemy in enemies:
+        enemy.draw(screen)
+
+    for movingplatform in movingplatforms:
+        movingplatform.draw(screen)
+
    # for shop in shops:
        # shop.draw(screen)
 
-    for enemy in enemies:
-        enemy.draw(screen)
+
 
     for checkpoint in checkpoints:
         checkpoint.draw(screen)
@@ -537,4 +580,5 @@ while running: #GAME LOOP#######################################################
 #END OF GAME LOOP############################################################################
 
 pygame.quit()
+
    
