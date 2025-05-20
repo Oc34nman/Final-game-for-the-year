@@ -1,5 +1,5 @@
 # Final-game-for-the-year
-mport pygame
+import pygame
 import sys
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
