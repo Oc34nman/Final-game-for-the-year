@@ -20,7 +20,7 @@ bg_x2 = 800
 
 ticker = 0
 
-total_time = 60 
+total_time = 60
 font = pygame.font.SysFont('freesansbold.ttf', 40)  
 score = 0
 
@@ -36,7 +36,7 @@ player_start = (100, 100)
 
 #-class platform----------------------------------------------------------------------------------------------
 class Platform:
-    
+   
     def __init__(self, x, y, w, h): #constructor
         global offset
         self.x = x
@@ -48,11 +48,11 @@ class Platform:
     def draw(self, surface): #draw function
         pygame.draw.rect(surface, GREEN, (self.x+offset, self.y, self.w, self.h))
         #screen.blit(self.image, (self.x + offset, self.y))
-        
+       
 
 #-class player----------------------------------------------------------------------------------------------
 class Player:
-    
+   
     def __init__(self, x, y): #constructor
         self.x = x
         self.y = y
@@ -66,15 +66,15 @@ class Player:
         self.Rows = 0
         self.frameNum = 0
 
-            
+           
     def handle_input(self, keys): #keyboard input
         global offset
         if keys[pygame.K_RIGHT]:
             #self.x += 5
-            #self.xv = 0 
+            #self.xv = 0
             offset -= 5
             self.Rows = 0
-            self.frameNum +=1 
+            self.frameNum +=1
             if self.frameNum > 2:
                 self.frameNum = 0
         elif keys[pygame.K_LEFT]:
@@ -89,8 +89,8 @@ class Player:
             self.vy = -12
             self.on_ground = False
 
-        
-            
+       
+           
 
     def apply_gravity(self): #make player fall
         self.vy += GRAVITY
@@ -105,8 +105,8 @@ class Player:
                     if self.y + self.frameHeight > plat.y and self.y + self.frameHeight - self.vy <= plat.y:
                         self.y = plat.y - self.frameHeight
                         self.vy = 0
-                        self.on_ground = True   
-            
+                        self.on_ground = True  
+           
             # Check vertical collision
             if self.x + self.w > plat_x and self.x < plat_x + plat.w:
                 if self.y + self.h > plat.y and self.y + self.h - self.vy <= plat.y:
@@ -133,10 +133,17 @@ class Player:
         #print("offset is", offset)
         if self.x + self.w > plat.x+offset and self.x < plat.x+offset + plat.w and self.y + self.h > plat.y and self.y < plat.y + plat.h:
             #print("colliding")
+            
+        
+    def checkpoint_colliding(self, xpos,ypos,width,height,num): #bounding box collision
+        global offset
+        #print("offset is", offset)
+        if self.x + self.w > plat.x+offset and self.x < plat.x+offset + plat.w and self.y + self.h > plat.y and self.y < plat.y + plat.h:
+            #print("colliding")
             return True
         else:
             return False
-        
+       
 
     def update(self, platforms, movingplatforms): #funtion that calls a bunch of other functions (keeps game loop more simple)
         self.apply_gravity()
@@ -156,7 +163,7 @@ class Spikes:
         self.image = pygame.image.load('spike.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (25, 25))
        
-        
+       
     def draw(self, surface):
         global offset
         #pygame.draw.polygon(surface, (0, 0, 200), [(self.x+offset+50, self.y+12.5), (self.x+37.5+offset, self.y-12.5), (self.x+25+offset, self.y+12.5)])
@@ -170,7 +177,7 @@ class Spikes:
             player.y < self.y + 5.5):  
             return True
         return False
-    
+   
 class Projectile:
     def __init__(self, x, y, speed):
         self.x = x
@@ -178,7 +185,7 @@ class Projectile:
         self.speed = speed
         self.w = 10
         self.h = 10
-        self.color = (255, 0, 0) 
+        self.color = (255, 0, 0)
         self.image = pygame.image.load('cannonproj.png').convert_alpha()
 
     def update(self):
@@ -195,7 +202,7 @@ class Projectile:
             player.y < self.y + self.h):
             return True
         return False
-    
+   
 class Cannon:
     def __init__(self, x, y, w, h):
         self.x = x
@@ -205,7 +212,7 @@ class Cannon:
         self.cooldown = 0  # Timer for shooting
         self.projectiles = []
         self.image = pygame.image.load('cannon.png').convert_alpha()
-        
+       
     def draw(self, surface):
         #pygame.draw.rect(surface, (0, 0, 0), (self.x + offset, self.y, self.w, self.h))
         screen.blit(self.image, (self.x + offset, self.y, self.w, self.h))
@@ -216,7 +223,7 @@ class Cannon:
         if self.cooldown == 0:
             self.projectiles.append(Projectile(self.x, self.y + self.h // 2, 5))
             self.cooldown = 80
-        
+       
         if self.cooldown > 0:
             self.cooldown -= 1
 
@@ -245,7 +252,7 @@ class Coin:
          score += 10
          return True  
      return False
-    
+   
 class Shop:
     def __init__(self, x, y, w, h):
         self.x = x
@@ -298,9 +305,9 @@ class Enemy:
         if (player.x + player.w > self.x + offset and
          player.x < self.x + offset + 40 and  
          player.y + player.h > self.y and
-         player.y < self.y + 40): 
+         player.y < self.y + 40):
             print("test")
-            
+           
 
 class Checkpoint:
     def __init__(self, x, y):
@@ -315,13 +322,13 @@ class Checkpoint:
         if (player.x + player.w > self.x + offset and
             player.x < self.x + offset + 20 and  
             player.y + player.h > self.y and
-            player.y < self.y + 50): 
+            player.y < self.y + 50):
             self.activated = True
             return True
         return False
-            
+           
 class MovingPlatform:
-     def __init__(self, x, y, w, h, min_x, max_x, speed=2):
+     def __init__(self, x, y, w, h, min_x, max_x, speed=4):
         self.x = x
         self.y = y
         self.w = w
@@ -330,7 +337,7 @@ class MovingPlatform:
         self.max_x = max_x
         self.speed = speed
         self.direction = 1
-    
+   
      def update(self):
             self.x += self.speed * self.direction
             if self.x < self.min_x or self.x + self.w > self.max_x:
@@ -343,19 +350,13 @@ class MovingPlatform:
         if (player.x + player.w > self.x + offset and
          player.x < self.x + offset + 40 and  
          player.y + player.h > self.y and
-         player.y < self.y + 40): 
-            print("test")
+         player.y < self.y + 40):
+            reset_game() == (self.x, self.y)
 
 def reset_game():
-    global player, offset 
-    for checkpoint in reversed(checkpoints):
-        if checkpoint.activated:
-            player.x = checkpoint.x
-            player.y = checkpoint.y
-            offset = -checkpoint.x + 100
-            return
-    player.x = 100  
-    player.y = 100  
+    global player, offset  # Make sure to reset the player and offset
+    player.x = 100  # Reset player to starting x position
+    player.y = 100  # Reset player to starting y position
     offset = 0  
 #list to contain platforms
 platforms = [
@@ -367,7 +368,9 @@ platforms = [
     Platform(1400, 400, 100, 20),
     Platform(2000, 380, 100, 20),
     Platform(1700, 380, 100, 20),
-    Platform(2200, 380, 500, 20)
+    Platform(2200, 380, 500, 20),
+    Platform(3500, 380, 100, 20)
+
 ]
 
 spikes = [
@@ -382,11 +385,12 @@ spikes = [
     Spikes(845, 220),
     Spikes(920, 220),
     Spikes(2700, 355)
-    
+   
 ]
 
 cannons = [
-    Cannon(2000, 350, 50, 30)
+    Cannon(2000, 350, 50, 30),
+    Cannon(3500, 350, 50, 30)
 ]
 
 coins = [
@@ -409,38 +413,39 @@ checkpoints = [
 ]
 
 movingplatforms = [
-    MovingPlatform(2800, 380, 100, 20, 2800, 3100),
-    MovingPlatform(2800, 380, 100, 20, 3000, 3800),
+    MovingPlatform(2800, 380, 100, 20, 2800, 3450),
+   
+
 ]
 attacks = []
-    
+   
 if keys[pygame.K_RIGHT]:
         if offset < -1500 and player[0]<750:
             player.vx = 5
-        
+       
         elif offset >260 and player[0]<400:
             player.vx = 5
-        
+       
         elif player.x<750:
             offset -= 5
             player.vx = 0
-        
+       
         else:
             player.vx = 0
 if keys[pygame.K_LEFT]:
         if offset > 260 and player[0]>0: #check if youve reached the left edge of the map
             player.vx = -5 #let player approach side of game screen
-        
+       
         elif player.vy>400 and offset < -1500:#check if were on the far right edge of the map
             player.vx = -5 #let player get back to the center of the game screen
-            
+           
         elif player.x>0: #if player is recenbtered, move the *offset*, not the player
             offset += 5
             player.vx = 0
-            
+           
         else:
             player.vx = 0 #make sure motion is off (stops from going off edge.
-    
+   
 
 start_ticks = pygame.time.get_ticks()
 running = True
@@ -453,7 +458,7 @@ while running: #GAME LOOP#######################################################
             print("mouse position: (",mousePos[0], " , ",mousePos[1], ")")
     #input section-------------------
     clock.tick(60)
-    
+   
     seconds = total_time - (pygame.time.get_ticks() - start_ticks) // 1000
     if seconds <= 0:
         print("Time's up!")
@@ -471,9 +476,9 @@ while running: #GAME LOOP#######################################################
             print("Shop opened")
     for checkpoint in checkpoints:
         if checkpoint.is_colliding(player):
-            print("test")
-            
-    
+            player_start = checkpoint
+           
+   
 
     for attack in attacks[:]:
         attack.update()
@@ -491,13 +496,13 @@ while running: #GAME LOOP#######################################################
 
 
 
-            
+           
     #update/physics section-----------
     player.update(platforms, movingplatforms)
 
     for movingplatform in movingplatforms:
         movingplatform.update()
-    for coin in coins[:]:  # Use a copy of the list to avoid errors while removing
+    for coin in coins[:]:  
         if coin.playerCoincollision(player):
             coins.remove(coin)
     #render section-------------------
@@ -516,7 +521,7 @@ while running: #GAME LOOP#######################################################
 
     for spike in spikes:
         spike.draw(screen)
-    
+   
     for cannon in cannons:
         cannon.draw(screen)
 
@@ -543,7 +548,9 @@ while running: #GAME LOOP#######################################################
         shop_open = False
 
     for cannon in cannons:
-        cannon.shoot()
+        screen_x = cannon.x + offset
+        if 0 <= screen_x <= 800:
+            cannon.shoot()
         cannon.update()
         for projectile in cannon.projectiles:
             if projectile.is_colliding(player):
@@ -576,9 +583,7 @@ while running: #GAME LOOP#######################################################
 
 
     pygame.display.flip()
-    
+   
 #END OF GAME LOOP############################################################################
 
 pygame.quit()
-
-   
