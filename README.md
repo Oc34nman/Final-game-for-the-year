@@ -132,7 +132,7 @@ class Player:
         global offset
         #print("offset is", offset)
         if self.x + self.w > plat.x+offset and self.x < plat.x+offset + plat.w and self.y + self.h > plat.y and self.y < plat.y + plat.h:
-            #print("colliding")
+            print("colliding")
             
         
     def checkpoint_colliding(self, xpos,ypos,width,height,num): #bounding box collision
@@ -141,8 +141,7 @@ class Player:
         if self.x + self.w > plat.x+offset and self.x < plat.x+offset + plat.w and self.y + self.h > plat.y and self.y < plat.y + plat.h:
             #print("colliding")
             return True
-        else:
-            return False
+
        
 
     def update(self, platforms, movingplatforms): #funtion that calls a bunch of other functions (keeps game loop more simple)
@@ -325,7 +324,8 @@ class Checkpoint:
             player.y < self.y + 50):
             self.activated = True
             return True
-        return False
+        else:
+            return False
            
 class MovingPlatform:
      def __init__(self, x, y, w, h, min_x, max_x, speed=4):
@@ -458,6 +458,7 @@ while running: #GAME LOOP#######################################################
             print("mouse position: (",mousePos[0], " , ",mousePos[1], ")")
     #input section-------------------
     clock.tick(60)
+    print(player_start)
    
     seconds = total_time - (pygame.time.get_ticks() - start_ticks) // 1000
     if seconds <= 0:
